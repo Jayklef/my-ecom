@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "category",
+    "accounts",
 ]
 
 MIDDLEWARE = [
@@ -68,6 +69,9 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "myecom.wsgi.application"
+
+
+AUTH_USER_MODEL = 'accounts.Account'
 
 
 # Database
