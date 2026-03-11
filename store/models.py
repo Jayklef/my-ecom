@@ -27,7 +27,15 @@ class Product(models.Model):
     
     def __str__(self):
         return self.product_name
+
+
+class DisparityManager(models.Manager):
+    def colors(self):
+        return super(DisparityManager,self).filter(disparity_category='color', is_active=True)
     
+    def sizes(self):
+        return super(DisparityManager,self).filter(disparity_category='size', is_active=True)
+        
 
 disparity_category_choice = (
     ('color', 'color'),
@@ -42,6 +50,9 @@ class Disparity(models.Model):
     created_date = models.DateTimeField(auto_now=True)
     
     
-    def __str__(self):
+    objects = DisparityManager()
+    
+    
+    def __unicode__(self):
         return self.product
     
