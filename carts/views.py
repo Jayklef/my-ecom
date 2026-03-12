@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from store.models import Product
+from store.models import Product, Disparity
 from .models import Cart, CartItem
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -13,13 +13,20 @@ def _cart_id(request):
 
 
 def add_cart(request, product_id):
-    
-    if request.method == 'POST':
-        color = request.GET['color']
-        size = request.GET['size']
-        print(color, size)
-    # get the product
+        # get the product
     product = Product.objects.get(id=product_id)
+    product_disparity = []
+    if request.method == 'POST':
+        for item in request.POST:
+            key = item
+            value = request.POST[key]
+     
+            try:
+                disparity = Disparity.objects.get(product=product, disparity_category__iexact=key, disparity_value__iexact=value)
+                product_disparity.append(disparity)
+            except:
+                pass
+
     
     try:
         # get the cart using tghe cart_id present in the session
@@ -34,6 +41,12 @@ def add_cart(request, product_id):
     
     try:
         cart_item = CartItem.objects.get(product=product, cart=cart)
+        
+        if len(product_disparity) > 0:
+            cart_item.disparitys.clear()
+            for item in product_disparity:
+                cart_item.disparitys.add(item)
+        
         cart_item.quantity += 1
         cart_item.save()
     except CartItem.DoesNotExist:
@@ -43,6 +56,10 @@ def add_cart(request, product_id):
             cart     = cart,
         )
         
+        if len(product_disparity) > 0:
+            cart_item.disparitys.clear()
+            for item in product_disparity:
+                cart_item.disparitys.add(item)
         cart_item.save()
     
     return redirect('cart')

@@ -53,6 +53,6 @@ class Disparity(models.Model):
     objects = DisparityManager()
     
     
-    def __unicode__(self):
-        return self.product
+    def __str__(self):
+        return self.disparity_value
     

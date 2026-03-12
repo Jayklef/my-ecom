@@ -40,8 +40,17 @@
                         >{{ cart_item.product.product_name }}</a
                       >
                       <p class="text-muted small">
-                        Color: 25 Mpx <br />
-                        Size: Canon
+                        
+                        {% if cart_item.disparitys.all %}
+                          
+                          {% for item in cart_item.disparitys.all  %}
+
+                            {{item.disparity_category | capfirst }}  : {{ item.disparity_value | capfirst }} <br>
+                            
+                          {% endfor %}
+                            
+                        {% endif %}
+                          
                       </p>
                     </figcaption>
                   </figure>
