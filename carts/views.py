@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from store.models import Product, Disparity
 from .models import Cart, CartItem
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponse
 
 # Create your views here.
 
@@ -39,17 +40,40 @@ def add_cart(request, product_id):
     cart.save()
     
     
-    try:
-        cart_item = CartItem.objects.get(product=product, cart=cart)
+    
+    is_cart_item_exists = CartItem.objects.filter(product=product, cart=cart).exists()
+    
+    if is_cart_item_exists:
+        cart_item = CartItem.objects.filter(product=product, cart=cart)
         
-        if len(product_disparity) > 0:
-            cart_item.disparitys.clear()
-            for item in product_disparity:
-                cart_item.disparitys.add(item)
+        # existing disparity
         
-        cart_item.quantity += 1
-        cart_item.save()
-    except CartItem.DoesNotExist:
+        ext_disp_list = []
+        id = []
+        for item in cart_item:
+            existing_disparity = item.disparitys.all()
+            ext_disp_list.append(list(existing_disparity))
+            id.append(item.id)
+            
+        print(ext_disp_list)
+        
+        
+        if product_disparity in ext_disp_list:
+            # increase cart quantity
+            index = ext_disp_list.index(product_disparity)
+            item_id = id[index]
+            item = CartItem.objects.get(product=product, id=item_id)
+            item.quantity += 1
+            item.save()
+            
+        else:
+            # create new cart item
+            item = CartItem.objects.create(product=product, quantity=1, cart=cart)
+            if len(product_disparity) > 0:
+                item.disparitys.clear()
+                item.disparitys.add(*product_disparity)      
+            item.save()
+    else:
         cart_item = CartItem.objects.create(
             product  = product,
             quantity = 1,
@@ -58,30 +82,32 @@ def add_cart(request, product_id):
         
         if len(product_disparity) > 0:
             cart_item.disparitys.clear()
-            for item in product_disparity:
-                cart_item.disparitys.add(item)
+            cart_item.disparitys.add(*product_disparity)
         cart_item.save()
     
     return redirect('cart')
         
 
 
-def remove_cart(request, product_id):
+def remove_cart(request, product_id, cart_item_id):
     cart = Cart.objects.get(cart_id=_cart_id(request))
     product = get_object_or_404(Product, id=product_id)
-    cart_item = CartItem.objects.get(product=product, cart=cart)
-    if cart_item.quantity > 1:
-        cart_item.quantity -= 1
-        cart_item.save()
-    else:
-        cart_item.delete()
+    try:
+        cart_item = CartItem.objects.get(product=product, cart=cart, id=cart_item_id)
+        if cart_item.quantity > 1:
+            cart_item.quantity -= 1
+            cart_item.save()
+        else:
+            cart_item.delete()
+    except:
+        pass
     return redirect('cart')
 
 
-def remove_cart_item(request, product_id):
+def remove_cart_item(request, product_id, cart_item_id):
     cart = Cart.objects.get(cart_id=_cart_id(request))
     product = get_object_or_404(Product, id=product_id)
-    cart_item = CartItem.objects.get(product=product, cart=cart)
+    cart_item = CartItem.objects.get(product=product, cart=cart, id=cart_item_id)
     cart_item.delete()
     return redirect('cart')
     
