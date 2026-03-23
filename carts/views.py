@@ -15,78 +15,140 @@ def _cart_id(request):
 
 
 def add_cart(request, product_id):
+    current_user = request.user
         # get the product
     product = Product.objects.get(id=product_id)
-    product_disparity = []
-    if request.method == 'POST':
-        for item in request.POST:
-            key = item
-            value = request.POST[key]
-     
-            try:
-                disparity = Disparity.objects.get(product=product, disparity_category__iexact=key, disparity_value__iexact=value)
-                product_disparity.append(disparity)
-            except:
-                pass
+    
+    if current_user.is_authenticated:
+        product_disparity = []
+        if request.method == 'POST':
+            for item in request.POST:
+                key = item
+                value = request.POST[key]
+        
+                try:
+                    disparity = Disparity.objects.get(product=product, disparity_category__iexact=key, disparity_value__iexact=value)
+                    product_disparity.append(disparity)
+                except:
+                    pass
 
-    
-    try:
-        # get the cart using tghe cart_id present in the session
-        cart = Cart.objects.get(cart_id=_cart_id(request))
-    except Cart.DoesNotExist:
-        cart = Cart.objects.create(
-            cart_id = _cart_id(request)
-        )
+                
         
-    cart.save()
-    
-    
-    
-    is_cart_item_exists = CartItem.objects.filter(product=product, cart=cart).exists()
-    
-    if is_cart_item_exists:
-        cart_item = CartItem.objects.filter(product=product, cart=cart)
+        is_cart_item_exists = CartItem.objects.filter(product=product, user=current_user).exists()
         
-        # existing disparity
-        
-        ext_disp_list = []
-        id = []
-        for item in cart_item:
-            existing_disparity = item.disparitys.all()
-            ext_disp_list.append(list(existing_disparity))
-            id.append(item.id)
+        if is_cart_item_exists:
+            cart_item = CartItem.objects.filter(product=product, user=current_user)
             
-        print(ext_disp_list)
-        
-        
-        if product_disparity in ext_disp_list:
-            # increase cart quantity
-            index = ext_disp_list.index(product_disparity)
-            item_id = id[index]
-            item = CartItem.objects.get(product=product, id=item_id)
-            item.quantity += 1
-            item.save()
             
+            ext_disp_list = []
+            id = []
+            for item in cart_item:
+                existing_disparity = item.disparitys.all()
+                ext_disp_list.append(list(existing_disparity))
+                id.append(item.id)
+            
+            
+            if product_disparity in ext_disp_list:
+                # increase cart quantity
+                index = ext_disp_list.index(product_disparity)
+                item_id = id[index]
+                item = CartItem.objects.get(product=product, id=item_id)
+                item.quantity += 1
+                item.save()
+                
+            else:
+                # create new cart item
+                item = CartItem.objects.create(product=product, quantity=1, user=current_user)
+                if len(product_disparity) > 0:
+                    item.disparitys.clear()
+                    item.disparitys.add(*product_disparity)      
+                item.save()
         else:
-            # create new cart item
-            item = CartItem.objects.create(product=product, quantity=1, cart=cart)
+            cart_item = CartItem.objects.create(
+                product  = product,
+                quantity = 1,
+                user     = current_user,
+            )
+            
             if len(product_disparity) > 0:
-                item.disparitys.clear()
-                item.disparitys.add(*product_disparity)      
-            item.save()
-    else:
-        cart_item = CartItem.objects.create(
-            product  = product,
-            quantity = 1,
-            cart     = cart,
-        )
+                cart_item.disparitys.clear()
+                cart_item.disparitys.add(*product_disparity)
+            cart_item.save()
         
-        if len(product_disparity) > 0:
-            cart_item.disparitys.clear()
-            cart_item.disparitys.add(*product_disparity)
-        cart_item.save()
+        return redirect('cart')
     
-    return redirect('cart')
+      # If the user is not authenticated    
+    else:
+        product_disparity = []
+        if request.method == 'POST':
+            for item in request.POST:
+                key = item
+                value = request.POST[key]
+        
+                try:
+                    disparity = Disparity.objects.get(product=product, disparity_category__iexact=key, disparity_value__iexact=value)
+                    product_disparity.append(disparity)
+                except:
+                    pass
+
+        
+        try:
+            # get the cart using tghe cart_id present in the session
+            cart = Cart.objects.get(cart_id=_cart_id(request))
+        except Cart.DoesNotExist:
+            cart = Cart.objects.create(
+                cart_id = _cart_id(request)
+            )
+            
+        cart.save()
+        
+        
+        
+        is_cart_item_exists = CartItem.objects.filter(product=product, cart=cart).exists()
+        
+        if is_cart_item_exists:
+            cart_item = CartItem.objects.filter(product=product, cart=cart)
+            
+            # existing disparity
+            
+            ext_disp_list = []
+            id = []
+            for item in cart_item:
+                existing_disparity = item.disparitys.all()
+                ext_disp_list.append(list(existing_disparity))
+                id.append(item.id)
+                
+            print(ext_disp_list)
+            
+            
+            if product_disparity in ext_disp_list:
+                # increase cart quantity
+                index = ext_disp_list.index(product_disparity)
+                item_id = id[index]
+                item = CartItem.objects.get(product=product, id=item_id)
+                item.quantity += 1
+                item.save()
+                
+            else:
+                # create new cart item
+                item = CartItem.objects.create(product=product, quantity=1, cart=cart)
+                if len(product_disparity) > 0:
+                    item.disparitys.clear()
+                    item.disparitys.add(*product_disparity)      
+                item.save()
+        else:
+            cart_item = CartItem.objects.create(
+                product  = product,
+                quantity = 1,
+                cart     = cart,
+            )
+            
+            if len(product_disparity) > 0:
+                cart_item.disparitys.clear()
+                cart_item.disparitys.add(*product_disparity)
+            cart_item.save()
+        
+        return redirect('cart')
         
 
 
