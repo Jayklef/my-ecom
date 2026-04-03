@@ -1,4 +1,6 @@
-{% extends 'base.html' %} {% load static %} {% block content %}
+{% extends 'base.html' %} 
+{% load static %} 
+{% block content %}
 
 <section class="section-content padding-y bg">
   <div class="container">
@@ -10,7 +12,7 @@
             <h5 class="card-header">Billing Address</h5>
             <div class="card-body">
                 <p class="card-text mb-0">{{ order.full_name }}  </p>
-                <p class="card-text mb-0">{{ order.address }}  </p>
+                <p class="card-text mb-0">{{ order.full_address }}  </p>
                 <p class="card-text mb-0">{{ order.city }}, {{ order.state }}   </p>
                 <p class="card-text mb-0">{{ order.country }}  </p>
                 <p class="card-text mb-0">{{ order.email }}  </p>
